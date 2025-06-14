@@ -2,39 +2,84 @@
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>اخبار داخلی</title>
+  <title>آخرین تیتر خبرگزاری‌های ایران</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f7f7f7;
+      margin: 20px;
+      direction: rtl;
+      color: #222;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    h2 {
+      margin-top: 40px;
+      color: #0057a0;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    li {
+      margin: 6px 0;
+    }
+    a {
+      text-decoration: none;
+      color: #007bff;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
-  <h1>تیترهای خبرگزاری ایسنا</h1>
-  <ul id="news-list">در حال بارگذاری...</ul>
+  <h1>آخرین تیتر خبرگزاری‌های ایران</h1>
+
+  <div id="news"></div>
 
   <script>
-    const proxyUrl = "http://localhost:3000/rss?url=";
-    const feedUrl = "https://www.isna.ir/rss";
+    const feeds = [
+      { id: "isna", title: "ایسنا", url: "https://www.isna.ir/rss" },
+      { id: "fars", title: "فارس نیوز", url: "https://www.farsnews.ir/rss" },
+      { id: "mehr", title: "مهر", url: "https://www.mehrnews.com/rss" },
+      { id: "irna", title: "ایرنا", url: "https://irna.ir/rss" },
+      { id: "tasnim", title: "تسنیم", url: "https://www.tasnimnews.com/fa/rss/feed/0/News" }
+    ];
 
-    fetch(proxyUrl + encodeURIComponent(feedUrl))
-      .then(res => res.text())
-      .then(data => {
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(data, "application/xml");
-        const items = xml.querySelectorAll("item");
+    const container = document.getElementById("news");
+    const proxyBase = "http://localhost:3000/rss?url=";
 
-        const ul = document.getElementById("news-list");
-        ul.innerHTML = "";
+    feeds.forEach(feed => {
+      const section = document.createElement("section");
+      const h2 = document.createElement("h2");
+      const ul = document.createElement("ul");
+      h2.textContent = feed.title;
+      section.appendChild(h2);
+      section.appendChild(ul);
+      container.appendChild(section);
 
-        items.forEach(item => {
-          const title = item.querySelector("title").textContent;
-          const link = item.querySelector("link").textContent;
-
-          const li = document.createElement("li");
-          li.innerHTML = `<a href="${link}" target="_blank">${title}</a>`;
-          ul.appendChild(li);
+      fetch(proxyBase + encodeURIComponent(feed.url))
+        .then(res => res.text())
+        .then(data => {
+          const parser = new DOMParser();
+          const xml = parser.parseFromString(data, "application/xml");
+          const items = xml.querySelectorAll("item");
+          items.forEach(item => {
+            const li = document.createElement("li");
+            const title = item.querySelector("title")?.textContent || "بدون عنوان";
+            const link = item.querySelector("link")?.textContent || "#";
+            li.innerHTML = `<a href="${link}" target="_blank">${title}</a>`;
+            ul.appendChild(li);
+          });
+        })
+        .catch(err => {
+          ul.innerHTML = `<li style="color: red;">خطا در بارگذاری خبرها</li>`;
+          console.error("❌ Error loading:", feed.id, err);
         });
-      })
-      .catch(err => {
-        console.error("خطا در بارگذاری:", err);
-        document.getElementById("news-list").innerText = "خطا در بارگذاری تیترها.";
-      });
+    });
   </script>
 </body>
 </html>
