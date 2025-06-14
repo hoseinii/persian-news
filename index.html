@@ -2,33 +2,60 @@
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>تست BBC فارسی</title>
+  <title>خبرهای داخلی ایران</title>
+  <style>
+    body { font-family: Tahoma; padding: 20px; background: #f9f9f9; }
+    h1 { color: #222; }
+    h2 { margin-top: 2em; }
+    ul { padding-right: 20px; }
+    li { margin-bottom: 10px; }
+    a { text-decoration: none; color: #007bff; }
+    a:hover { text-decoration: underline; }
+  </style>
 </head>
 <body>
-  <h1>بی‌بی‌سی فارسی</h1>
-  <ul id="list">در حال بارگذاری...</ul>
+  <h1>📰 خبرهای داخلی ایران</h1>
+
+  <div id="iranian-news">
+    <h2>خبرگزاری فارس</h2>
+    <ul id="fars">در حال بارگذاری...</ul>
+
+    <h2>خبرگزاری مهر</h2>
+    <ul id="mehr">در حال بارگذاری...</ul>
+
+    <h2>خبرگزاری ایسنا</h2>
+    <ul id="isna">در حال بارگذاری...</ul>
+  </div>
 
   <script>
-    fetch("https://api.allorigins.hexlet.app/get?url=" + encodeURIComponent("https://feeds.bbci.co.uk/persian/rss.xml"))
-      .then(res => {
-        if (!res.ok) throw new Error("Network response was not ok");
-        return res.json();
-      })
-      .then(data => {
-        const xml = new DOMParser().parseFromString(data.contents, "application/xml");
-        const items = xml.querySelectorAll("item");
-        const ul = document.getElementById("list");
-        ul.innerHTML = "";
-        items.forEach(item => {
-          const li = document.createElement("li");
-          li.innerHTML = `<a href="${item.querySelector("link").textContent}" target="_blank">${item.querySelector("title").textContent}</a>`;
-          ul.appendChild(li);
+    const sources = [
+      { id: "fars", url: "https://www.farsnews.ir/rss" },
+      { id: "mehr", url: "https://www.mehrnews.com/rss" },
+      { id: "isna", url: "https://www.isna.ir/rss" }
+    ];
+
+    sources.forEach(({ id, url }) => {
+      fetch("https://api.allorigins.win/get?url=" + encodeURIComponent(url))
+        .then(res => res.ok ? res.json() : Promise.reject(res))
+        .then(data => {
+          const xml = new DOMParser().parseFromString(data.contents, "application/xml");
+          const items = xml.querySelectorAll("item");
+          const ul = document.getElementById(id);
+          ul.innerHTML = "";
+          items.forEach((item, i) => {
+            if (i >= 10) return; // فقط ۱۰ تیتر اول
+            const li = document.createElement("li");
+            const title = item.querySelector("title")?.textContent;
+            const link = item.querySelector("link")?.textContent;
+            li.innerHTML = `<a href="${link}" target="_blank">${title}</a>`;
+            ul.appendChild(li);
+          });
+        })
+        .catch(err => {
+          document.getElementById(id).innerText = "خطا در بارگذاری خبرها";
+          console.error("Error loading:", id, err);
         });
-      })
-      .catch(err => {
-        document.getElementById("list").innerText = "خطا در بارگذاری";
-        console.error(err);
-      });
+    });
   </script>
 </body>
 </html>
