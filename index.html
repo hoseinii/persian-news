@@ -9,8 +9,11 @@
   <ul id="list">در حال بارگذاری...</ul>
 
   <script>
-    fetch("https://api.allorigins.win/get?url=" + encodeURIComponent("https://feeds.bbci.co.uk/persian/rss.xml"))
-      .then(res => res.json())
+    fetch("https://api.allorigins.hexlet.app/get?url=" + encodeURIComponent("https://feeds.bbci.co.uk/persian/rss.xml"))
+      .then(res => {
+        if (!res.ok) throw new Error("Network response was not ok");
+        return res.json();
+      })
       .then(data => {
         const xml = new DOMParser().parseFromString(data.contents, "application/xml");
         const items = xml.querySelectorAll("item");
