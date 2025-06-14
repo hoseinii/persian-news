@@ -1,127 +1,72 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>اخبار لحظه‌ای</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f8f9fa;
-            font-family: 'Tahoma', sans-serif;
-            margin-top: 50px;
-            margin-bottom: 50px;
-        }
-        .news-box {
-            background-color: white;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-            margin-bottom: 30px;
-        }
-        .news-title {
-            color: #0d6efd;
-            margin-bottom: 20px;
-        }
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-        li {
-            margin: 6px 0;
-        }
-        a {
-            text-decoration: none;
-            color: #0d6efd;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        header, footer {
-            background-color: #f8f9fa;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #6c757d;
-            font-size: 14px;
-            border-top: 1px solid #e9ecef;
-            border-bottom: 1px solid #e9ecef;
-            position: fixed;
-            width: 100%;
-            z-index: 1000;
-        }
-        header { top: 0; }
-        footer { bottom: 0; }
-        .container {
-            padding-top: 60px;
-            padding-bottom: 60px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>خبرگزاری‌های ایران</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <style>
+    body { background: #f8f9fa; font-family: Tahoma; }
+    h2 { margin-top: 30px; color: #0d6efd; }
+    .news-item { margin-bottom: 15px; }
+    .source { color: #6c757d; font-size: 14px; }
+  </style>
 </head>
-<body>
+<body class="container py-4">
 
-<header>
-    <p>آخرین اخبار لحظه‌ای ایران</p>
-</header>
+  <h1 class="text-center">📰 فید خبرگزاری‌های داخلی</h1>
+  <div id="feeds"></div>
 
-<div class="container">
-    <div id="news"></div>
-</div>
-
-<footer>
-    <p>تهیه شده با <i class="bi bi-heart-fill text-danger"></i></p>
-</footer>
-
-<script>
+  <script>
     const feeds = [
-        { id: "isna", title: "ایسنا", url: "https://www.isna.ir/rss" },
-        { id: "fars", title: "فارس نیوز", url: "https://www.farsnews.ir/rss" },
-        { id: "mehr", title: "مهر", url: "https://www.mehrnews.com/rss" },
-        { id: "irna", title: "ایرنا", url: "https://www.irna.ir/rss" },
-        { id: "tasnim", title: "تسنیم", url: "https://www.tasnimnews.com/fa/rss/feed/0/News" }
+      { name: "ایسنا", url: "https://www.isna.ir/rss" },
+      { name: "مهر", url: "https://www.mehrnews.com/rss" },
+      { name: "تسنیم", url: "https://www.tasnimnews.com/rss" },
+      { name: "فارس", url: "https://www.farsnews.ir/rss" },
+      { name: "ایرنا", url: "https://www.irna.ir/rss" }
     ];
 
-    const container = document.getElementById("news");
-    const proxyBase = "http://localhost:3000/rss?url=";
+    function createNewsBlock(source, items) {
+      const container = document.createElement("div");
+      container.innerHTML = `<h2>${source}</h2>`;
+      items.slice(0, 5).forEach(item => {
+        const el = document.createElement("div");
+        el.className = "news-item";
+        el.innerHTML = `
+          <a href="${item.link}" target="_blank" class="text-primary fw-bold">${item.title}</a>
+          <div class="source">${item.pubDate}</div>
+        `;
+        container.appendChild(el);
+      });
+      return container;
+    }
 
+    function parseRSS(xml) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(xml, "application/xml");
+      const items = [...doc.querySelectorAll("item")];
+      return items.map(el => ({
+        title: el.querySelector("title")?.textContent || "",
+        link: el.querySelector("link")?.textContent || "",
+        pubDate: el.querySelector("pubDate")?.textContent || ""
+      }));
+    }
+
+    const container = document.getElementById("feeds");
     feeds.forEach(feed => {
-        const section = document.createElement("section");
-        section.classList.add("news-box");
-
-        const h2 = document.createElement("h2");
-        h2.classList.add("news-title");
-        h2.textContent = feed.title;
-
-        const ul = document.createElement("ul");
-
-        section.appendChild(h2);
-        section.appendChild(ul);
-        container.appendChild(section);
-
-        fetch(proxyBase + encodeURIComponent(feed.url))
-            .then(res => res.text())
-            .then(data => {
-                const parser = new DOMParser();
-                const xml = parser.parseFromString(data, "application/xml");
-                const items = xml.querySelectorAll("item");
-                items.forEach((item, index) => {
-                    if (index >= 8) return; // نمایش فقط ۸ خبر اول
-                    const li = document.createElement("li");
-                    const title = item.querySelector("title")?.textContent || "بدون عنوان";
-                    const link = item.querySelector("link")?.textContent || "#";
-                    li.innerHTML = `<a href="${link}" target="_blank">${title}</a>`;
-                    ul.appendChild(li);
-                });
-            })
-            .catch(err => {
-                ul.innerHTML = `<li style="color: red;">خطا در بارگذاری خبرها</li>`;
-                console.error("❌ Error loading:", feed.id, err);
-            });
+      fetch(`http://localhost:3000/rss?url=${encodeURIComponent(feed.url)}`)
+        .then(res => res.text())
+        .then(xml => {
+          const items = parseRSS(xml);
+          container.appendChild(createNewsBlock(feed.name, items));
+        })
+        .catch(err => {
+          const errorBox = document.createElement("div");
+          errorBox.className = "alert alert-danger";
+          errorBox.innerHTML = `❌ خطا در بارگذاری فید <strong>${feed.name}</strong>`;
+          container.appendChild(errorBox);
+        });
     });
-</script>
-
+  </script>
 </body>
 </html>
